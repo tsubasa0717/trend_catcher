@@ -4,10 +4,9 @@ export const GoogleTrendClient = class {
   }
   // トレンド検索
   async getInterestOverTime(params) {
-    // const query_params = new URLSearchParams(params)
-    // const res = await fetch(this.endpoint + '?target_api=interestOverTime&' + query_params)
-    // return (await res.json())?.default?.timelineData
-    return []
+    const query_params = new URLSearchParams(params)
+    const res = await fetch(this.endpoint + '?target_api=interestOverTime&' + query_params)
+    return (await res.json())?.default?.timelineData
   }
 
   // 関連ワード検索
