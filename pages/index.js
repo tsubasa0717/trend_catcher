@@ -8,6 +8,7 @@ import TableContainer from '@material-ui/core/TableContainer'
 import TableHead from '@material-ui/core/TableHead'
 import TableRow from '@material-ui/core/TableRow'
 import TextField from '@material-ui/core/TextField'
+import { useRouter } from 'next/router'
 import { default as React, useState } from 'react'
 import Chart from '../components/Chart'
 import GenericTemplate from '../components/GenericTemplate'
@@ -35,6 +36,7 @@ const Home = ({ initData }) => {
   const classes = useStyles()
   const [graphData, setGraphData] = useState(initData)
   const [keyword, setKeyword] = useState('Next.js')
+  const router = useRouter()
 
   React.useEffect(() => {
     // Remove the server-side injeacted CSS.
@@ -123,6 +125,7 @@ const Home = ({ initData }) => {
 // データをテンプレートに受け渡す部分の処理を記述します
 export const getStaticProps = async () => {
   const googleTrendClient = new GoogleTrendClient()
+
   const data = await googleTrendClient.getInterestOverTime({
     keyword: 'Next.js',
     geo: 'JP',
