@@ -12,18 +12,11 @@ import { default as React, useState } from 'react'
 import Chart from '../components/Chart'
 import GenericTemplate from '../components/GenericTemplate'
 import { GoogleTrendClient } from '../libs/google_trend'
+import { microcmsClient } from '../libs/microcms'
 
 const createData = (name, category, weight, price) => {
   return { name, category, weight, price }
 }
-
-const rows = [
-  createData('チョコレート', 'お菓子', 100, 120),
-  createData('ケーキ', 'お菓子', 400, 480),
-  createData('りんご', 'フルーツ', 500, 360),
-  createData('バナナ', 'フルーツ', 200, 300),
-  createData('みかん', 'フルーツ', 250, 180),
-]
 
 const useStyles = makeStyles({
   table: {
@@ -31,7 +24,7 @@ const useStyles = makeStyles({
   },
 })
 
-const Home = ({ initData }) => {
+const Home = ({ initData, words }) => {
   const classes = useStyles()
   const [graphData, setGraphData] = useState(initData)
   const [keyword, setKeyword] = useState('Next.js')
@@ -103,20 +96,20 @@ const Home = ({ initData }) => {
             <TableHead>
               <TableRow>
                 <TableCell>検索ワード</TableCell>
-                <TableCell align="right">カテゴリー</TableCell>
-                <TableCell align="right">重量(g)</TableCell>
-                <TableCell align="right">価格(円)</TableCell>
+                <TableCell align="right">検索回数</TableCell>
+                <TableCell align="right">最終検索ユーザー</TableCell>
+                <TableCell align="right">最終検索時刻</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {rows.map((row) => (
-                <TableRow key={row.name}>
+              {words.map((word) => (
+                <TableRow key={word.updatedAt}>
                   <TableCell component="th" scope="row">
-                    {row.name}
+                    {word.keyword}
                   </TableCell>
-                  <TableCell align="right">{row.category}</TableCell>
-                  <TableCell align="right">{row.weight}</TableCell>
-                  <TableCell align="right">{row.price}</TableCell>
+                  <TableCell align="right">{word.count}</TableCell>
+                  <TableCell align="right">Guest</TableCell>
+                  <TableCell align="right">{word.updatedAt}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -130,6 +123,7 @@ const Home = ({ initData }) => {
 // データをテンプレートに受け渡す部分の処理を記述します
 export const getStaticProps = async () => {
   const googleTrendClient = new GoogleTrendClient()
+  const db_words = new microcmsClient('t_words')
 
   const data = await googleTrendClient.getInterestOverTime({
     keyword: 'Next.js',
@@ -138,8 +132,9 @@ export const getStaticProps = async () => {
     startTime: '2010-01-01',
     endTime: '2020-07-01',
   })
+
   return {
-    props: { initData: data },
+    props: { initData: data, words: await db_words.getList() },
   }
 }
 
