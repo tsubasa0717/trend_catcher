@@ -1,0 +1,18 @@
+--- バージョン情報
+Node v14.17.3
+Yarn v1.22.5
+Next v11.0.1
+
+
+--- Next.js × microCMS
+https://blog.microcms.io/microcms-next-jamstack-blog/
+
+--- Google Trends API
+公式
+https://www.npmjs.com/package/google-trends-api
+実装例
+https://cfautog.tokyo/2020/03/06/node-js-google-trends-api/
+
+--- Next認証
+公式
+https://www.npmjs.com/package/next-auth

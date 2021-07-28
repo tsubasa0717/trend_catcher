@@ -1,0 +1,17 @@
+{
+  "extends": ["next", "next/core-web-vitals", "plugin:prettier/recommended", "eslint-config-prettier"],
+  "rules": {
+    "prettier/prettier": [
+      "error",
+      {
+        "prettier/prettier": true,
+        "trailingComma": "all",
+        "semi": false,
+        "singleQuote": true,
+        "printWidth": 120,
+        "tabWidth": 2,
+        "jsxBracketSameLine": false
+      }
+    ]
+  }
+}
