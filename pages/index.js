@@ -8,15 +8,12 @@ import TableContainer from '@material-ui/core/TableContainer'
 import TableHead from '@material-ui/core/TableHead'
 import TableRow from '@material-ui/core/TableRow'
 import TextField from '@material-ui/core/TextField'
+import { getSession } from 'next-auth/client'
 import { default as React, useState } from 'react'
 import Chart from '../components/Chart'
 import GenericTemplate from '../components/GenericTemplate'
-import { GoogleTrendClient } from '../libs/google_trend'
-import { microcmsClient } from '../libs/microcms'
-
-const createData = (name, category, weight, price) => {
-  return { name, category, weight, price }
-}
+import { GoogleTrendsClient } from '../libs/google_trends'
+import { MicrocmsClient } from '../libs/microcms'
 
 const useStyles = makeStyles({
   table: {
@@ -24,29 +21,39 @@ const useStyles = makeStyles({
   },
 })
 
-const Home = ({ initData, words }) => {
+const Home = ({ initData, historiesData, user }) => {
   const classes = useStyles()
   const [graphData, setGraphData] = useState(initData)
+  const [histories, setHistories] = useState(historiesData)
   const [keyword, setKeyword] = useState('Next.js')
 
-  React.useEffect(() => {
-    // Remove the server-side injeacted CSS.
-    const jssStyles = document.querySelector('#jss-server-side')
-    if (jssStyles) {
-      jssStyles.parentElement.removeChild(jssStyles)
+  const startSearch = async (keyword) => {
+    // microCMS連携
+    const db_words = new MicrocmsClient('t_words')
+    const record = await db_words.getFromKeyword(keyword)
+    if (record.length) {
+      await db_words.update(record[0].id, {
+        keyword: record[0].keyword,
+        last_searcher: user.name,
+        count: String(Number(record[0].count) + 1),
+      })
+    } else {
+      await db_words.create({
+        keyword,
+        last_searcher: user.name,
+        count: String(1),
+      })
     }
-  }, [])
 
-  const getTrendValues = async (keyword) => {
-    const googleTrendClient = new GoogleTrendClient()
-    const data = await googleTrendClient.getInterestOverTime({
-      keyword,
-      geo: 'JP',
-      hl: 'ja',
-      startTime: '2010-01-01',
-      endTime: '2021-07-01',
-    })
-    setGraphData(data)
+    // 履歴更新 (遅延処理)
+    setTimeout(async () => {
+      const history_data = await db_words.getList()
+      setHistories(history_data)
+    }, 5000)
+
+    // GoogleTrends連携
+    const trends_data = await GoogleTrendsClient.getInterestOverTime(keyword)
+    setGraphData(trends_data)
   }
 
   const handleKeywordFormChange = (e) => {
@@ -55,7 +62,7 @@ const Home = ({ initData, words }) => {
 
   const handleKeywordFormSubmit = async () => {
     if (keyword != '') {
-      await getTrendValues(keyword)
+      await startSearch(keyword)
     }
   }
 
@@ -102,14 +109,14 @@ const Home = ({ initData, words }) => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {words.map((word) => (
-                <TableRow key={word.updatedAt}>
+              {histories.map((history) => (
+                <TableRow key={history.updatedAt}>
                   <TableCell component="th" scope="row">
-                    {word.keyword}
+                    {history.keyword}
                   </TableCell>
-                  <TableCell align="right">{word.count}</TableCell>
-                  <TableCell align="right">Guest</TableCell>
-                  <TableCell align="right">{word.updatedAt}</TableCell>
+                  <TableCell align="right">{history.count}</TableCell>
+                  <TableCell align="right">{history.last_searcher}</TableCell>
+                  <TableCell align="right">{history.updatedAt}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -120,21 +127,21 @@ const Home = ({ initData, words }) => {
   )
 }
 
-// データをテンプレートに受け渡す部分の処理を記述します
-export const getStaticProps = async () => {
-  const googleTrendClient = new GoogleTrendClient()
-  const db_words = new microcmsClient('t_words')
+// TODO: getServerSideProps vs getStaticProps
+export const getServerSideProps = async (context) => {
+  const session = await getSession(context)
+  if (!session) {
+    context.res.writeHead(302, { Location: '/login' })
+    context.res.end()
+  }
 
-  const data = await googleTrendClient.getInterestOverTime({
-    keyword: 'Next.js',
-    geo: 'JP',
-    hl: 'ja',
-    startTime: '2010-01-01',
-    endTime: '2020-07-01',
-  })
+  const user = session.user
+  const db_words = new MicrocmsClient('t_words')
+  const history_data = await db_words.getList()
+  const trends_data = await GoogleTrendsClient.getInterestOverTime('Next.js')
 
   return {
-    props: { initData: data, words: await db_words.getList() },
+    props: { initData: trends_data, historiesData: history_data, user },
   }
 }
 
