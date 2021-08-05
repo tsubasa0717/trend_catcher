@@ -128,11 +128,12 @@ const Home = ({ initData, historiesData, user }) => {
 }
 
 // TODO: getServerSideProps vs getStaticProps
-export const getServerSideProps = async (context) => {
-  const session = await getSession(context)
+export const getServerSideProps = async (ctx) => {
+  const session = await getSession(ctx)
+  console.log(session)
   if (!session) {
-    context.res.writeHead(302, { Location: '/login' })
-    context.res.end()
+    ctx.res.statusCode = 302
+    ctx.res.setHeader('Location', `/login`)
   }
 
   const user = session.user
